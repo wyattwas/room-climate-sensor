@@ -43,10 +43,14 @@ unsigned long loopStartTime = 0;
 unsigned long loopWaitTime = 0;
 
 //  initialsing functuions
-void setup_wifi();
-void setup_mqtt();
-void set_light(LightColor colorl);
-void set_display();
+void setup_wifi(bool full_display = false);
+void setup_mqtt(bool full_display = false);
+void set_display(bool connection_text = false);
+void write_head();
+void write_connection();
+void write_co2(float value, bool write_head = false);
+void write_humid(float value, bool write_head = false);
+void write_temp(float value, bool write_head = false);
 
 //  declaring sensors
 SensirionI2cScd30 scd30;
@@ -57,7 +61,11 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 float current_temp = 0.0;
 float current_humid = 0.0;
 float current_co2 = 0.0;
+float old_temp = 0.0;
+float old_humid = 0.0;
+float old_co2 = 0.0;
 LightColor color = LightColor::OFF;
+LightColor old_color = LightColor::OFF;
 
 void setup()
 {
@@ -67,8 +75,8 @@ void setup()
 
     tft.initR(INITR_BLACKTAB);
     tft.setRotation(1);
-    setup_wifi();
-    setup_mqtt();
+    setup_wifi(true);
+    setup_mqtt(true);
     Wire.begin(SDA_PIN, SCL_PIN);
     scd30.begin(Wire, SCD30_I2C_ADDR_61);
     scd30.startPeriodicMeasurement(0);
@@ -95,19 +103,19 @@ void loop()
 
     if (current_co2 > co2VeryHigh)
     {
-        set_light(LightColor::RED);
+        color = LightColor::RED;
     }
     else if (current_co2 <= co2VeryHigh && current_co2 > co2High)
     {
-        set_light(LightColor::RED);
+        color = LightColor::RED;
     }
     else if (current_co2 <= co2High && current_co2 > co2Mid)
     {
-        set_light(LightColor::YELLOW);
+        color = LightColor::YELLOW;
     }
     else
     {
-        set_light(LightColor::GREEN);
+        color = LightColor::GREEN;
     }
 
     Serial.println("Current values:");
@@ -134,14 +142,24 @@ void loop()
         loopWaitTime = 5 * 60 * 1000;
         loopStartTime = millis();
     }
+
+    set_display();
 }
 
-void setup_wifi()
+void setup_wifi(bool full_display)
 {
     Serial.print("Connecting to ");
     Serial.println(ssid);
-    set_light(LightColor::BLUE);
-    set_display();
+
+    if (full_display)
+    {
+        color = LightColor::BLUE;
+        set_display(true);
+    }
+    else
+    {
+        tft.fillRect(0, 0, 160, 5, ST7735_BLUE);
+    }
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
@@ -156,8 +174,7 @@ void setup_wifi()
     WiFi.macAddress(mac);
     snprintf(macStr, sizeof(macStr), "%02x%02x%02x%02x%02x%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    set_light(LightColor::OFF);
-    set_display();
+    color = LightColor::OFF;
 
     Serial.println("");
     Serial.println("WiFi connected");
@@ -167,12 +184,20 @@ void setup_wifi()
     Serial.println(macStr);
 }
 
-void setup_mqtt()
+void setup_mqtt(bool full_display)
 {
     Serial.print("Connecting to MQTT Server at ");
     Serial.println(mqtt_server);
-    set_light(LightColor::BLUE);
-    set_display();
+
+    if (full_display)
+    {
+        color = LightColor::BLUE;
+        set_display(true);
+    }
+    else
+    {
+        tft.fillRect(0, 0, 160, 5, ST7735_BLUE);
+    }
 
     client.setServer(mqtt_server, 1883);
 
@@ -191,65 +216,162 @@ void setup_mqtt()
         }
     }
 
-    set_light(LightColor::OFF);
-    set_display();
+    color = LightColor::OFF;
 }
 
-void set_light(LightColor colorl)
+void set_display(bool connection_text)
 {
-    color = colorl;
-}
+    int text_color = 0x0000;
+    int replace_color = 0x0000;
 
-void set_display()
-{
+    if (color == LightColor::BLUE || color == LightColor::RED)
+    {
+        text_color = 0xffff;
+    }
+
     switch (color)
     {
     case LightColor::RED:
-        tft.fillScreen(ST7735_RED);
-        tft.fillRect(5, 5, tft.width() - 10, tft.height() - 10, ST7735_WHITE);
+        replace_color = ST7735_RED;
         break;
     case LightColor::GREEN:
-        tft.fillScreen(ST7735_GREEN);
-        tft.fillRect(5, 5, tft.width() - 10, tft.height() - 10, ST7735_WHITE);
+        replace_color = ST7735_GREEN;
         break;
     case LightColor::YELLOW:
-        tft.fillScreen(ST7735_YELLOW);
-        tft.fillRect(5, 5, tft.width() - 10, tft.height() - 10, ST7735_WHITE);
+        replace_color = ST7735_YELLOW;
         break;
     case LightColor::BLUE:
-        tft.fillScreen(ST7735_BLUE);
-        tft.fillRect(5, 5, tft.width() - 10, tft.height() - 10, ST7735_WHITE);
+        replace_color = ST7735_BLUE;
         break;
     case LightColor::OFF:
-        tft.fillScreen(ST7735_WHITE);
+        replace_color = ST7735_WHITE;
         break;
     }
 
+    if (color != old_color)
+    {
+        switch (color)
+        {
+        case LightColor::RED:
+            tft.fillScreen(ST7735_RED);
+            break;
+        case LightColor::GREEN:
+            tft.fillScreen(ST7735_GREEN);
+            break;
+        case LightColor::YELLOW:
+            tft.fillScreen(ST7735_YELLOW);
+            break;
+        case LightColor::BLUE:
+            tft.fillScreen(ST7735_BLUE);
+            break;
+        case LightColor::OFF:
+            tft.fillScreen(ST7735_WHITE);
+            break;
+        }
+
+        tft.setTextColor(text_color);
+        write_head();
+
+        if (connection_text)
+        {
+            write_connection();
+        }
+        else
+        {
+            write_co2(current_co2, true);
+            write_humid(current_humid, true);
+            write_temp(current_temp, true);
+        }
+    }
+    else
+    {
+        tft.fillRect(0, 0, 160, 5, replace_color);
+
+        if (old_co2 != current_co2)
+        {
+            tft.setTextColor(replace_color);
+            write_co2(old_co2);
+            tft.setTextColor(text_color);
+            write_co2(current_co2);
+        }
+        if (old_humid != current_humid)
+        {
+            tft.setTextColor(replace_color);
+            write_humid(old_humid);
+            tft.setTextColor(text_color);
+            write_humid(current_humid);
+        }
+        if (old_temp != current_temp)
+        {
+            tft.setTextColor(replace_color);
+            write_temp(old_temp);
+            tft.setTextColor(text_color);
+            write_temp(current_temp);
+        }
+    }
+
+    old_color = color;
+    old_co2 = current_co2;
+    old_humid = current_humid;
+    old_temp = current_temp;
+}
+
+void write_head()
+{
     tft.setTextSize(2);
-
-    tft.setCursor(20, 10);
-    tft.setTextColor(0x0000);
+    tft.setCursor(16, 10);
     tft.print("Klimamesser");
+}
 
-    tft.setTextSize(1);
-
+void write_connection()
+{
     tft.setCursor(10, 40);
-    tft.print("CO2: ");
-    tft.print(current_co2);
-    tft.print(" ppm");
-    tft.setCursor(10, 50);
-    tft.print("Luftfeuchtigkeit: ");
-    tft.print(current_humid);
-    tft.print(" %");
-    tft.setCursor(10, 60);
-    tft.print("Temperatur: ");
-    tft.print(current_temp);
-    tft.print(" Grad C");
-
-    tft.setCursor(10, 100);
+    tft.setTextSize(1);
     tft.print("IP: ");
     tft.print(WiFi.localIP());
-    tft.setCursor(10, 110);
+    tft.setCursor(10, 50);
     tft.print("MAC: ");
     tft.print(WiFi.macAddress());
+}
+
+void write_co2(float value, bool write_head)
+{
+    if (write_head)
+    {
+        tft.setCursor(10, 35);
+        tft.setTextSize(1);
+        tft.print("CO2: ");
+    }
+    tft.setCursor(10, 45);
+    tft.setTextSize(2);
+    tft.print(value);
+    tft.print(" ppm");
+}
+
+void write_humid(float value, bool write_head)
+{
+    if (write_head)
+    {
+        tft.setCursor(10, 65);
+        tft.setTextSize(1);
+        tft.print("Humid: ");
+    }
+    tft.setCursor(10, 75);
+    tft.setTextSize(2);
+    tft.print(value);
+    tft.print(" %");
+}
+
+void write_temp(float value, bool write_head)
+{
+    if (write_head)
+    {
+        tft.setCursor(10, 95);
+        tft.setTextSize(1);
+        tft.print("Temp: ");
+    }
+    tft.setCursor(10, 105);
+    tft.setTextSize(2);
+    tft.print(value);
+    tft.print(" Grad C");
 }
