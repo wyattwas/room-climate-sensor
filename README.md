@@ -9,7 +9,7 @@ verwaltet werden.
 
 | Service Name        | Port         | Aufgabe                                                                    | Logins                 |
 |---------------------|--------------|----------------------------------------------------------------------------|------------------------|
-| Raspberry Pi Server | SSH Port: 22 | Server                                                                     | pi, raspberry          |
+| Raspberry Pi Server | SSH Port: 22 | Server                                                                     | pi, pi                 |
 | Portainer           | 9443         | Docker mit Oberfläche verwalten                                            | admin, adminadminadmin |
 | Apache              | 80           | Setllt die Website zur Verfügung die auf dem Monitor angezeigt werden soll |                        |
 | Grafana             | 3000         | Stellt die grafische Darstellung der Daten zur Verfügung                   | admin, admin           |
