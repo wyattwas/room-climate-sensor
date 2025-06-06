@@ -9,7 +9,7 @@ verwaltet werden.
 
 | Service Name        | Port         | Aufgabe                                                                    | Logins                 |
 |---------------------|--------------|----------------------------------------------------------------------------|------------------------|
-| Raspberry Pi Server | SSH Port: 22 | Server                                                                     | pi, raspberry          |
+| Raspberry Pi Server | SSH Port: 22 | Server                                                                     | pi, pi                 |
 | Portainer           | 9443         | Docker mit Oberfläche verwalten                                            | admin, adminadminadmin |
 | Apache              | 80           | Setllt die Website zur Verfügung die auf dem Monitor angezeigt werden soll |                        |
 | Grafana             | 3000         | Stellt die grafische Darstellung der Daten zur Verfügung                   | admin, admin           |
@@ -17,6 +17,9 @@ verwaltet werden.
 | Mosquitto           | 1883         | MQTT Broker um die Daten zu verschicken                                    | admin, admin           |
 | Node-RED            | 1880         | Empfängt die Daten von MQTT und schreibt sie in die MariaDB Datenbank      |                        |
 | PHPAdmin            | 8080         | Weboberfläche um MariaDB zu verwalten                                      | root, root             |
+
+Auf dem Raspberry Pi ist, im Verzeichnis `/home/pi/.config/autostart`, die Datei `autostart.desktop` abgelegt, die das Skript `/opt/autostart.sh` ausführt.
+Das Skript öffnet nach 15 Sekunden Firefox, im Kino Modus, mit der URL `http://localhost`. Dadurch wird beim Start des Raspberries direkt die Website mit den Daten angezeigt.
 
 ## Clients
 
