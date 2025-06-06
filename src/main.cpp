@@ -9,10 +9,10 @@
 #include <Wire.h>
 #include "LightColor.h"
 
-#ifndef STASSID
-#define STASSID "IoT-WLAN"
-#define STAPSK "dalmatiner"
-#define STAMQTT "172.20.200.60"
+#ifndef WIFI
+#define WIFI_SSID "IoT-WLAN"
+#define WIFI_PSK "dalmatiner"
+#define MQTT_IP "172.20.200.60"
 #endif
 
 #define TFT_DC D4
@@ -24,14 +24,13 @@
 #define SDA_PIN D2
 #define SCL_PIN D1
 
-const char* ssid = STASSID;
-const char* password = STAPSK;
-const char* mqtt_server = STAMQTT;
+const char * const ssid = WIFI_SSID;
+const char * const password = WIFI_PSK;
+const char * const mqtt_server = MQTT_IP;
 
-int co2VeryHigh = 2500;
-int co2High = 2000;
-int co2Mid = 1500;
-int co2CalibValue = 500;
+constexpr int co2VeryHigh = 2500;
+constexpr int co2High = 2000;
+constexpr int co2Mid = 1500;
 
 char macStr[18];
 
@@ -42,7 +41,6 @@ unsigned long currentWaitTime = 0;
 unsigned long loopStartTime = 0;
 unsigned long loopWaitTime = 0;
 
-//  initialsing functuions
 void setup_wifi(bool full_display = false);
 void setup_mqtt(bool full_display = false);
 void set_display(bool connection_text = false);
@@ -52,12 +50,10 @@ void write_co2(float value, bool write_head = false);
 void write_humid(float value, bool write_head = false);
 void write_temp(float value, bool write_head = false);
 
-//  declaring sensors
 SensirionI2cScd30 scd30;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
-//  SCD30
 float current_temp = 0.0;
 float current_humid = 0.0;
 float current_co2 = 0.0;
