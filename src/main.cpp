@@ -2,7 +2,6 @@
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
-#include <SPI.h>
 #include <SensirionI2cScd30.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
@@ -24,13 +23,12 @@
 #define SDA_PIN D2
 #define SCL_PIN D1
 
-const char * const ssid = WIFI_SSID;
-const char * const password = WIFI_PSK;
-const char * const mqtt_server = MQTT_IP;
+const char* const ssid = WIFI_SSID;
+const char* const password = WIFI_PSK;
+const char* const mqtt_server = MQTT_IP;
 
-constexpr int co2VeryHigh = 2500;
 constexpr int co2High = 2000;
-constexpr int co2Mid = 1500;
+constexpr int co2Mid = 1000;
 
 char macStr[18];
 
@@ -75,6 +73,9 @@ void setup()
     setup_mqtt(true);
     Wire.begin(SDA_PIN, SCL_PIN);
     scd30.begin(Wire, SCD30_I2C_ADDR_61);
+
+    scd30.forceRecalibration(800);
+    scd30.activateAutoCalibration(true);
     scd30.startPeriodicMeasurement(0);
 }
 
@@ -97,11 +98,7 @@ void loop()
     strncat(topic, macStr, strlen(macStr));
     DynamicJsonDocument doc(1024);
 
-    if (current_co2 > co2VeryHigh)
-    {
-        color = LightColor::RED;
-    }
-    else if (current_co2 <= co2VeryHigh && current_co2 > co2High)
+    if (current_co2 > co2High)
     {
         color = LightColor::RED;
     }
