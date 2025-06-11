@@ -5,6 +5,7 @@
 #include <SensirionI2cScd30.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
+#include <ratio>
 #include <Wire.h>
 #include "LightColor.h"
 
@@ -74,7 +75,7 @@ void setup()
     Wire.begin(SDA_PIN, SCL_PIN);
     scd30.begin(Wire, SCD30_I2C_ADDR_61);
 
-    scd30.forceRecalibration(800);
+    scd30.forceRecalibration(8000);
     scd30.activateAutoCalibration(true);
     scd30.startPeriodicMeasurement(0);
 }
@@ -132,6 +133,13 @@ void loop()
         client.publish(topic, mqtt_message, true);
         Serial.print("MQTT publish ");
         Serial.println(mqtt_message);
+
+        if (current_co2 > co2High)
+        {
+            digitalWrite(PIEZO_PIN, HIGH);
+            tone(PIEZO_PIN, 2000, 1000);
+        }
+
         loopWaitTime = 5 * 60 * 1000;
         loopStartTime = millis();
     }
