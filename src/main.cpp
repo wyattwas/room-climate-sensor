@@ -9,6 +9,8 @@
 #include <Wire.h>
 #include "LightColor.h"
 
+#define VERSION_NUMBER "25.24.0"
+
 #ifndef WIFI
 #define WIFI_SSID "IoT-WLAN"
 #define WIFI_PSK "dalmatiner"
@@ -75,7 +77,7 @@ void setup()
     Wire.begin(SDA_PIN, SCL_PIN);
     scd30.begin(Wire, SCD30_I2C_ADDR_61);
 
-    scd30.forceRecalibration(8000);
+    scd30.forceRecalibration(800);
     scd30.activateAutoCalibration(true);
     scd30.startPeriodicMeasurement(0);
 }
@@ -333,6 +335,9 @@ void write_connection()
     tft.setCursor(10, 50);
     tft.print("MAC: ");
     tft.print(WiFi.macAddress());
+    tft.setCursor(10, 60);
+    tft.print("Version: ");
+    tft.print(VERSION_NUMBER);
 }
 
 void write_co2(float value, bool write_head)
