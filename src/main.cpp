@@ -1,15 +1,14 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <SensirionI2cScd30.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
-#include <ratio>
 #include <Wire.h>
 #include "LightColor.h"
 
-#define VERSION_NUMBER "25.24.0"
+#define VERSION_NUMBER "25.27.0" // year.calendar_week.version_of_week
 
 #ifndef WIFI
 #define WIFI_SSID "IoT-WLAN"
@@ -164,10 +163,10 @@ void setup_wifi(bool full_display)
         tft.fillRect(0, 0, 160, 5, ST7735_BLUE);
     }
 
-    WiFi.mode(WIFI_STA);
+    WiFiClass::mode(WIFI_STA);
     WiFi.begin(ssid, password);
 
-    while (WiFi.status() != WL_CONNECTED)
+    while (WiFiClass::status() != WL_CONNECTED)
     {
         delay(500);
         Serial.print(".");
