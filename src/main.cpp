@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <SensirionI2cScd30.h>
@@ -8,7 +9,7 @@
 #include <Wire.h>
 #include "LightColor.h"
 
-#define VERSION_NUMBER "25.24.0" // year.calendar_week.version_of_week.git_branch
+#define VERSION_NUMBER "25.24.0"  // year.calendar_week.version_of_week
 
 #ifndef WIFI
 #define WIFI_SSID "IoT-WLAN"
