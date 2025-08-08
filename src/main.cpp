@@ -9,7 +9,7 @@
 #include <Wire.h>
 #include "LightColor.h"
 
-#define VERSION_NUMBER "25.24.0"  // year.calendar_week.version_of_week
+#define VERSION_NUMBER "25.33.0"  // year.calendar_week.version_of_week
 
 #ifndef WIFI
 #define WIFI_SSID "IoT-WLAN"
@@ -30,8 +30,22 @@ const char* const ssid = WIFI_SSID;
 const char* const password = WIFI_PSK;
 const char* const mqtt_server = MQTT_IP;
 
+/**
+ * CO2 values in ppm
+ */
 constexpr int co2High = 2000;
 constexpr int co2Mid = 1000;
+constexpr int co2CalibValue = 450;
+
+/**
+ * Ambient Pressure at location of sensor in millibar
+ */
+constexpr int ambientPressure = 972;
+
+/**
+ * Difference between sensor temperature reading and actual measurement outside the sensor enclosure in degrees celsius
+ */
+constexpr int temperatureOffset = 0;
 
 char macStr[18];
 
@@ -77,9 +91,9 @@ void setup()
     Wire.begin(SDA_PIN, SCL_PIN);
     scd30.begin(Wire, SCD30_I2C_ADDR_61);
 
-    scd30.forceRecalibration(800);
-    scd30.activateAutoCalibration(true);
-    scd30.startPeriodicMeasurement(0);
+    scd30.setTemperatureOffset(temperatureOffset);
+    scd30.forceRecalibration(co2CalibValue);
+    scd30.startPeriodicMeasurement(ambientPressure);
 }
 
 void loop()
@@ -132,12 +146,16 @@ void loop()
 
     if (millis() - loopStartTime >= loopWaitTime)
     {
-        client.publish(topic, mqtt_message, true);
-        Serial.print("MQTT publish ");
-        Serial.println(mqtt_message);
+        if (millis() >= 6 * 60 * 1000)
+        {
+            client.publish(topic, mqtt_message, true);
+            Serial.print("MQTT publish ");
+            Serial.println(mqtt_message);
+        }
 
         if (current_co2 > co2High)
         {
+            // TODO: digitalWrite dürfte hier nicht gebraucht werden, da die tone Methode benutzt wird. Prüfen und dann entfernen.
             digitalWrite(PIEZO_PIN, HIGH);
             tone(PIEZO_PIN, 2000, 1000);
         }
